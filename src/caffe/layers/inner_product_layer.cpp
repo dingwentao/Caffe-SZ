@@ -216,20 +216,21 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
      p_var = const_cast <Dtype*>(bottom_data);
  
 SZ_Init("../SZ/example/sz.config");
-r1 = K_*M_;
-float temp[r1];
+r1 = K_;
+r2 = M_;
+float temp[K_*M_];
 //printf("test = %d %d %d\n", M_, N_, K_);
-for (int i = 0; i < r1; i++) {
+for (int i = 0; i < K_*M_; i++) {
   temp[i] = p_var[i];
 }
 unsigned char *bytes = SZ_compress(SZ_FLOAT, &temp[0], &outSize, r5, r4, r3, r2, r1);    
 //r1 = N_;i
 time_tool_inner += 1;
 if (time_tool_inner % 100 == 0 || time_tool_inner % 100 == 1)
-printf("Current compression ratio of fc layers = %d to %d\n", r1/250, outSize/1000);
+  printf("Current compression ratio of fc layers = %d to %d\n", K_*M_/250, outSize/1000);
 void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize, r5, r4, r3, r2, r1);
 float *decData2 = (float *)decData;
-for (int i = 0; i < r1; i++) {
+for (int i = 0; i < K_*M_; i++) {
   //top_data[i] = *(float*)(decData2+i);
   p_var[i] = *(float*)(decData2+i);
 }

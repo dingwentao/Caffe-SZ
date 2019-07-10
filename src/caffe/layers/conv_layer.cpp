@@ -86,18 +86,19 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     p_var = const_cast <Dtype*>(bottom_data);
 
       SZ_Init("../SZ/example/sz.config");                                                                          
-      rr1 = this->bottom_dim_*this->num_;
-      float temp[rr1];
-      for (int i = 0; i < rr1; i++) {
+      rr1 = this->bottom_dim_;
+      rr2 = this->num_;
+      float temp[this->bottom_dim_*this->num_];
+      for (int i = 0; i < this->bottom_dim_*this->num_; i++) {
           temp[i] = p_var[i];
       }
       time_tool += 1;
       unsigned char *bytes = SZ_compress(SZ_FLOAT, &temp[0], &outSize2, rr5, rr4, rr3, rr2, rr1);    
       if (time_tool % 100 == 0 || time_tool % 100 == 1)
-        printf("Current compression ratio of Conv_ is from %d to %d\n", rr1/250, outSize2/1000);
+        printf("Current compression ratio of Conv_ is from %d to %d\n", this->bottom_dim_*this->num_/250, outSize2/1000);
       void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize2, rr5, rr4, rr3, rr2, rr1);
       float *decData2 = (float *)decData;
-      for (int i = 0; i < rr1; i++) {
+      for (int i = 0; i < this->bottom_dim_*this->num_; i++) {
           p_var[i] = *(float*)(decData2+i);
       }
       free(bytes);

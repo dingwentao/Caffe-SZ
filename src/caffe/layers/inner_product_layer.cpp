@@ -230,7 +230,9 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     time_tool_inner += 1;
     if (time_tool_inner % 100 == 0 || time_tool_inner % 100 == 1)
 	    //printf("Current compression ratio of fc layers = %d to %d\n", K_*M_/250, outSize/1000);
-	    printf("Current compression ratio of fc layers = %lu to %lu\n", r1/250, outSize/1000);
+	    //printf("Current compression ratio of fc layers = %lu to %lu\n", r1/250, outSize/1000);
+	    LOG(INFO) << "Current compression ratio of fc layers is from " << r1/250 << " to " << outSize/1000;
+    
     void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize, r5, r4, r3, r2, r1);
     float *decData2 = (float *)decData;
     memcpy(p_var, decData2, r1*sizeof(float));

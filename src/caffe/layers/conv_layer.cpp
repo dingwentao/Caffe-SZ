@@ -114,7 +114,8 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     //printf("test to see if working 0005\n"); 
     if (time_tool % 100 == 0 || time_tool % 100 == 1)
 	    //	      printf("Current compression ratio of Conv_ is from %d to %d\n", this->bottom_dim_*this->num_/250, outSize2/1000);
-	    printf("Current compression ratio of Conv_ is from %lu to %lu\n", rr1/250, outSize2/1000);
+	    //	      printf("Current compression ratio of Conv_ is from %lu to %lu\n", rr1/250, outSize2/1000);
+	    LOG(INFO) << "Current compression ratio of Conv_ is from " << rr1/250 << " to " << outSize2/1000;
 
     //printf("test to see if working 0006\n"); 
     void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize2, rr5, rr4, rr3, rr2, rr1);

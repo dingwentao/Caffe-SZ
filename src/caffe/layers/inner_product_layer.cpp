@@ -211,97 +211,88 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
      //for (int i = 0; i < r1; i++) {
      //    temp[i] = *(float*)(decData2+i);
      //}
-     const Dtype* bottom_data = bottom[0]->cpu_data();
-     Dtype *p_var = NULL;
-     p_var = const_cast <Dtype*>(bottom_data);
- 
-SZ_Init("../SZ/example/sz.config");
-r1 = K_;
-r2 = M_;
-float temp[K_*M_];
-//printf("test = %d %d %d\n", M_, N_, K_);
-for (int i = 0; i < K_*M_; i++) {
-  temp[i] = p_var[i];
-}
-unsigned char *bytes = SZ_compress(SZ_FLOAT, &temp[0], &outSize, r5, r4, r3, r2, r1);    
-//r1 = N_;i
-time_tool_inner += 1;
-if (time_tool_inner % 100 == 0 || time_tool_inner % 100 == 1)
-  printf("Current compression ratio of fc layers = %d to %d\n", K_*M_/250, outSize/1000);
-void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize, r5, r4, r3, r2, r1);
-float *decData2 = (float *)decData;
-for (int i = 0; i < K_*M_; i++) {
-  //top_data[i] = *(float*)(decData2+i);
-  p_var[i] = *(float*)(decData2+i);
-}
-free(bytes);
-//free(decData);
-free(decData2);
-//free(data);
+    //printf("testing if working 0001\n");
 
-SZ_Finalize();
+    const Dtype* bottom_data = bottom[0]->cpu_data();
+    Dtype *p_var = NULL;
+    p_var = const_cast <Dtype*>(bottom_data);
 
-
-     //for (int i = 0; i < M_*K_; i++)
-     //  *(p_var+i) = 0.0;
-     //printf("test = %d %d %d\n", M_, K_, N_);
-     //free(bytes);
-     //free(decData2);
-     //SZ_Finalize();
+    SZ_Init("../SZ/example/sz.config");
+    //r1 = K_;
+    //r2 = M_;
+    //printf("testing if working 0002\n");
+    r1 = K_*M_;
+    float *temp;
+    temp = (float*) malloc (r1*sizeof(float));
+    memcpy(temp, p_var, r1*sizeof(float));
+  
+    unsigned char *bytes = SZ_compress(SZ_FLOAT, &temp[0], &outSize, r5, r4, r3, r2, r1);    
+    time_tool_inner += 1;
+    if (time_tool_inner % 100 == 0 || time_tool_inner % 100 == 1)
+	    //printf("Current compression ratio of fc layers = %d to %d\n", K_*M_/250, outSize/1000);
+	    printf("Current compression ratio of fc layers = %lu to %lu\n", r1/250, outSize/1000);
+    void *decData = SZ_decompress(SZ_FLOAT, bytes, outSize, r5, r4, r3, r2, r1);
+    float *decData2 = (float *)decData;
+    memcpy(p_var, decData2, r1*sizeof(float));
+    
+    free(bytes);
+    free(decData2);
+    free(temp);
+    SZ_Finalize();
 
     //const Dtype* bottom_data = bottom[0]->cpu_data();
     // Gradient with respect to weight
     if (transpose_) {
-      caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
-          K_, N_, M_,
-          (Dtype)1., bottom_data, top_diff,
-          (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+	    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
+			    K_, N_, M_,
+			    (Dtype)1., bottom_data, top_diff,
+			    (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
     } else {
-      caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
-          N_, K_, M_,
-          (Dtype)1., top_diff, bottom_data,
-          (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+	    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
+			    N_, K_, M_,
+			    (Dtype)1., top_diff, bottom_data,
+			    (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
     }
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
-    const Dtype* top_diff = top[0]->cpu_diff();
-    // Gradient with respect to bias
-    caffe_cpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
-        bias_multiplier_.cpu_data(), (Dtype)1.,
-        this->blobs_[1]->mutable_cpu_diff());
+	  const Dtype* top_diff = top[0]->cpu_diff();
+	  // Gradient with respect to bias
+	  caffe_cpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
+			  bias_multiplier_.cpu_data(), (Dtype)1.,
+			  this->blobs_[1]->mutable_cpu_diff());
   }
   if (propagate_down[0]) {
-    const Dtype* top_diff = top[0]->cpu_diff();
-    // Gradient with respect to bottom data
-    if (transpose_) {
-      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans,
-          M_, K_, N_,
-          (Dtype)1., top_diff, this->blobs_[0]->cpu_data(),
-          (Dtype)0., bottom[0]->mutable_cpu_diff());
-    } else {
-      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans,
-          M_, K_, N_,
-          (Dtype)1., top_diff, this->blobs_[0]->cpu_data(),
-          (Dtype)0., bottom[0]->mutable_cpu_diff());
-    }
+	  const Dtype* top_diff = top[0]->cpu_diff();
+	  // Gradient with respect to bottom data
+	  if (transpose_) {
+		  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans,
+				  M_, K_, N_,
+				  (Dtype)1., top_diff, this->blobs_[0]->cpu_data(),
+				  (Dtype)0., bottom[0]->mutable_cpu_diff());
+	  } else {
+		  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans,
+				  M_, K_, N_,
+				  (Dtype)1., top_diff, this->blobs_[0]->cpu_data(),
+				  (Dtype)0., bottom[0]->mutable_cpu_diff());
+	  }
   }
   if (pruning_coeff_ > 0) {
-    if (this->param_propagate_down_[0]) {
-      caffe_mul(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(),
-          masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
-    }
-    if (bias_term_ && this->param_propagate_down_[1]) {
-      caffe_mul(this->blobs_[1]->count(), this->blobs_[1]->cpu_diff(),
-          masks_[1]->cpu_data(), this->blobs_[1]->mutable_cpu_diff());
-    }
+	  if (this->param_propagate_down_[0]) {
+		  caffe_mul(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(),
+				  masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
+	  }
+	  if (bias_term_ && this->param_propagate_down_[1]) {
+		  caffe_mul(this->blobs_[1]->count(), this->blobs_[1]->cpu_diff(),
+				  masks_[1]->cpu_data(), this->blobs_[1]->mutable_cpu_diff());
+	  }
   }
-}
+  }
 
 #ifdef CPU_ONLY
-STUB_GPU(InnerProductLayer);
+  STUB_GPU(InnerProductLayer);
 #endif
 
-INSTANTIATE_CLASS(InnerProductLayer);
-REGISTER_LAYER_CLASS(InnerProduct);
+  INSTANTIATE_CLASS(InnerProductLayer);
+  REGISTER_LAYER_CLASS(InnerProduct);
 
-}  // namespace caffe
+  }  // namespace caffe
